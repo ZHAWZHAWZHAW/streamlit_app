@@ -10,7 +10,7 @@ def load_data():
     return tokenizer, model
 
 st.set_page_config(page_title="Chatbot")
-st.write("Welcome to the DialoGPT-medium chatbot example.")
+st.write("Welcome to the DialoGPT-medium chatbot example of schneli3.")
 tokenizer, model = load_data()
 
 # Init Session State
