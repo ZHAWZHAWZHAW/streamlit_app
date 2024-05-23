@@ -1,52 +1,74 @@
 import streamlit as st
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+import pandas as pd
+import numpy as np
 
-# streamlit cache clear (or menu)
-@st.cache_resource
-def load_data():
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
-    model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
-    return tokenizer, model
+# Titel und Einführung
+st.title("Datenanalyse mit Streamlit")
+st.markdown("""
+### Anforderungen an die App:
+1. **Laden Sie innerhalb der App ein Beispiel-Datenset aus dem Netz**
+2. **Stellen Sie die Daten aufbereitet dar (Tabelle oder Grafiken)**
+3. **Die Anzeige soll durch Eingabefelder (z.B. Radio-Buttons oder Slider) steuerbar sein**
+""")
 
-st.set_page_config(page_title="Chatbot")
-st.write("Welcome to the DialoGPT-medium chatbot example of schneli3.")
-tokenizer, model = load_data()
+# Abschnitt 1: Beispielhafte Datentabelle
+st.header("Beispielhafte Datentabelle")
+st.write(pd.DataFrame({
+    'first column': [1, 2, 3, 4],
+    'second column': [10, 20, 30, 40]
+}))
 
-# Init Session State
-if 'step' not in st.session_state:
-    st.session_state.step = 0
-    st.session_state.chat_history_ids = None
-    st.session_state.history = []
+# Abschnitt 2: Zufällige Daten für ein Liniendiagramm
+st.header("Zufällige Daten für ein Liniendiagramm")
+chart_data = pd.DataFrame(
+    np.random.randn(20, 3),
+    columns=['a', 'b', 'c'])
+st.line_chart(chart_data)
+
+# Abschnitt 3: Formular zur Eingabe
+st.header("Formular zur Eingabe")
+with st.form("my_form2"):
+    st.write("Bitte füllen Sie das Formular aus:")
+    slider_val = st.slider("Form Slider")
+    checkbox_val = st.checkbox("Form Checkbox")
+    # Submit-Button für das Formular
+    submitted2 = st.form_submit_button("Submit")
+    if submitted2:
+        st.write("Ergebnis des Formulars:")
+        st.write("Slider:", slider_val, "Checkbox:", checkbox_val)
+
+# Schaltfläche zum Wechseln der Nachricht
+st.header("Interaktive Nachricht")
+if st.button('Say Goodbye', key="button1"):
+    st.write('Goodbye')
 else:
-    st.session_state.step+=1
+    st.write('Hello')
 
-input = st.text_input(label="Enter your question:")
+# Abschnitt 4: Beispiel-Datenset aus dem Netz laden und anzeigen
+st.header("Beispiel-Datenset aus dem Netz")
+@st.cache_data
+def load_data():
+    url = 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv'
+    return pd.read_csv(url)
 
-if input:
-    # encode the new user input, add the eos_token and return a tensor in Pytorch
-    new_user_input_ids = tokenizer.encode(input + tokenizer.eos_token, return_tensors='pt')
+data = load_data()
 
-    # append the new user input tokens to the chat history
-    bot_input_ids = torch.cat([st.session_state.chat_history_ids, new_user_input_ids], dim=-1) if st.session_state.step > 1 else new_user_input_ids
+st.write("### Das Iris-Dataset")
+st.write(data.head())
 
-    # generated a response while limiting the total chat history to 1000 tokens, 
-    st.session_state.chat_history_ids = model.generate(bot_input_ids, max_length=1000, pad_token_id=tokenizer.eos_token_id)
+# Eingabefelder zur Steuerung der Anzeige
+st.header("Steuerung der Datenanzeige")
+option = st.selectbox(
+    'Wählen Sie die anzuzeigende Spalte:',
+    data.columns)
 
-    # pretty print last ouput tokens from bot
-    response = tokenizer.decode(st.session_state.chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
-    st.session_state.history.append(input)
-    st.session_state.history.append(response)
+num_rows = st.slider('Wählen Sie die Anzahl der anzuzeigenden Zeilen:', 1, len(data), 5)
 
-if st.button('Reset'):
-    st.session_state.step = 0
-    st.session_state.chat_history_ids = None
-    st.session_state.history = []
+# Anzeige der gefilterten Daten
+st.write(f"### Anzeigen der ersten {num_rows} Zeilen der Spalte '{option}':")
+st.write(data[[option]].head(num_rows))
 
-for x in range(len(st.session_state.history)):
-    person = "**User**" if x%2==0 else "**Bot**"
-    st.write(person, st.session_state.history[x])
-    
-st.write("Step: ", st.session_state.step)
-st.write(st.session_state.chat_history_ids)
-
+# Erstellung eines Diagramms basierend auf Benutzereingabe
+if st.checkbox('Diagramm anzeigen'):
+    st.write(f"### Diagramm der Spalte '{option}':")
+    st.line_chart(data[[option]].head(num_rows))
