@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Titel und Einführung
-st.title("Datenanalyse mit Streamlit")
+st.title("MDM SW13 schneli3: Datenanalyse mit Streamlit")
 st.markdown("""
 ### Anforderungen an die App:
 1. **Laden Sie innerhalb der App ein Beispiel-Datenset aus dem Netz**
